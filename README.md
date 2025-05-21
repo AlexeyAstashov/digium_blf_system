@@ -87,13 +87,16 @@ Asterisk отправляет команду телефонам перезагр
 **index.php?logout** — для выхода из сессии
 
 ## 📌 Зависимости
-PHP 5.6+
+**PHP 5.6+**
 
-MariaDB / MySQL
+**MariaDB / MySQL**
 
 Asterisk + Digium телефоны (поддержка XML BLF)
 
 Apache с доступом на /var/www/html/digium_phones/
+
+## 📃 Лицензия
+Лицензия: [GNU GPL v3](LICENSE)
 
 -------------------------------------------------------------------------------
 
@@ -186,9 +189,9 @@ Input validation and access protection
 Supports session logout via **index.php?logout**
 
 ## 📌 Requirements
-PHP 5.6+
+**PHP 5.6+**
 
-MariaDB / MySQL
+**MariaDB / MySQL**
 
 Asterisk with Digium phones (XML BLF support)
 
