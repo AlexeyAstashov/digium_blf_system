@@ -1,0 +1,283 @@
+/* Базовые стили */
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h2, h3 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+/* Сообщения */
+.message {
+    padding: 12px;
+    margin: 15px auto;
+    border-radius: 4px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+}
+
+.message.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+}
+
+.message.error {
+    background-color: #f2dede;
+    color: #a94442;
+    border: 1px solid #ebccd1;
+}
+
+/* Альтернативный стиль ошибки (общее оформление) */
+.error {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 10px;
+    margin: 15px 0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Формы */
+.forms-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 30px;
+    justify-content: center;
+}
+
+.form-section {
+    flex: 1;
+    min-width: 300px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: left;
+}
+
+form {
+    position: relative;
+}
+
+label {
+    display: block;
+    margin: 10px 0 5px;
+    color: #555;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+/* Отключаем автозаполнение */
+form[autocomplete="off"] input {
+    background-color: white !important;
+    background-image: none !important;
+    color: inherit !important;
+}
+
+/* Кнопки */
+button,
+.logout-btn,
+.delete-btn,
+.admin-btn,
+.reset-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    color: white;
+    transition: background-color 0.3s;
+    text-decoration: none;
+    width: 100%;
+}
+
+/* Основная кнопка */
+button {
+    background-color: #4CAF50;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Кнопка "выйти" */
+.logout-btn {
+    background-color: #f44336;
+}
+
+.logout-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Кнопка "удалить" */
+.delete-btn {
+    background-color: #f44336;
+}
+
+.delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Кнопка "админ" */
+.admin-btn {
+    background-color: #ff9800;
+}
+
+.admin-btn:hover {
+    background-color: #e68a00;
+}
+
+/* Кнопка "сброс" */
+.reset-btn {
+    background-color: #6c757d;
+    margin-left: 10px;
+}
+
+.reset-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Список пользователей */
+.user-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 0;
+    list-style: none;
+}
+
+.user-item {
+    background: #fff;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.user-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.ext-link {
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    display: block;
+}
+
+.ext-link:hover {
+    color: #4CAF50;
+}
+
+/* Модальное окно */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    text-align: center;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.close-btn {
+    color: #aaa;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.form-footer {
+    margin-top: 20px;
+}
+
+.admin-password {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .forms-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .user-list {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
+.form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.form-buttons button {
+    flex: 1;
+}
