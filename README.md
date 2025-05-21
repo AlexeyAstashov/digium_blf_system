@@ -196,4 +196,4 @@ Apache or Nginx with access to /var/www/html/digium_phones/
 
 
 ## 📃 License
-This project is open-source and available under the MIT License.
+License: [GNU GPL v3](LICENSE)
