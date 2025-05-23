@@ -22,7 +22,7 @@ $contacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $xml = new DOMDocument('1.0', 'UTF-8');
 $contactsNode = $xml->createElement('contacts');
 $contactsNode->setAttribute('group_name', "$ext-BLF");
-$contactsNode->setAttribute('editable', "1");
+$contactsNode->setAttribute('editable', "0");
 $contactsNode->setAttribute('id', "$ext");
 
 foreach ($contacts as $row) {
