@@ -121,3 +121,44 @@ button {
 .logout-btn:hover {
     background-color: #d32f2f !important;
 }
+.smartblf-settings {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.setting-group {
+    padding: 15px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+.setting-group h4 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.setting-group label {
+    display: block;
+    margin: 10px 0;
+}
+
+.setting-group select, 
+.setting-group input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    margin-top: 3px;
+}
+.settings-btn {
+    background: green;
+}

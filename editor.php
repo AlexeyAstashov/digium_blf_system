@@ -23,27 +23,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['delete'])) {
         $stmt = $pdo->prepare("DELETE FROM contacts WHERE extension = ? AND contact_id = ?");
         $stmt->execute([$ext, $_POST['delete']]);
+        $_SESSION['message'] = "Контакт удален";
+        header("Location: editor.php");
+        exit;
     } elseif (isset($_POST['edit'])) {
         $_SESSION['edit_id'] = $_POST['edit'];
-    } elseif (isset($_POST['update'], $_POST['contact_id'], $_POST['first_name'])) {
-        // Валидация номера
+        header("Location: editor.php");
+        exit;
+    } elseif (isset($_POST['update_settings'], $_POST['contact_id'])) {
+        // Обработка сохранения настроек SmartBLF
+        $stmt = $pdo->prepare("UPDATE contacts SET 
+            pickupcall = ?,
+            myintercom = ?,
+            idle_led_color = ?,
+            idle_led_state = ?,
+            idle_ringtone = ?,
+            ringing_led_color = ?,
+            ringing_led_state = ?,
+            ringing_ringtone = ?,
+            busy_led_color = ?,
+            busy_led_state = ?,
+            busy_ringtone = ?,
+            hold_led_color = ?,
+            hold_led_state = ?
+            WHERE extension = ? AND contact_id = ?");
+        
+        $stmt->execute([
+            isset($_POST['pickupcall']) ? 1 : 0,
+            isset($_POST['myintercom']) ? 1 : 0,
+            $_POST['idle_led_color'] ?? 'green',
+            $_POST['idle_led_state'] ?? 'on',
+            $_POST['idle_ringtone'] ?? 'Digium',
+            $_POST['ringing_led_color'] ?? 'red',
+            $_POST['ringing_led_state'] ?? 'fast',
+            $_POST['ringing_ringtone'] ?? 'Techno',
+            $_POST['busy_led_color'] ?? 'red',
+            $_POST['busy_led_state'] ?? 'on',
+            $_POST['busy_ringtone'] ?? 'Techno',
+            $_POST['hold_led_color'] ?? 'amber',
+            $_POST['hold_led_state'] ?? 'slow',
+            $ext,
+            $_POST['contact_id']
+        ]);
+        
+        $_SESSION['message'] = "Настройки SmartBLF сохранены";
+        header("Location: editor.php");
+        exit;
+    } elseif (isset($_POST['update_contact'], $_POST['original_contact_id'], $_POST['contact_id'], $_POST['first_name'])) {
+        // Изменена логика для сохранения контакта
+        // Используем original_contact_id для WHERE условия, а contact_id для установки нового значения
         if (!preg_match('/^\+?\d+$/', $_POST['contact_id'])) {
             $_SESSION['error'] = "Номер должен содержать только цифры и может начинаться с +";
         } else {
+            // Проверяем, существует ли новый contact_id у других контактов (кроме текущего редактируемого)
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM contacts WHERE extension = ? AND contact_id = ? AND contact_id != ?");
-            $stmt->execute([$ext, $_POST['contact_id'], $_POST['update']]);
+            $stmt->execute([$ext, $_POST['contact_id'], $_POST['original_contact_id']]);
             $exists = $stmt->fetchColumn();
             
             if ($exists == 0) {
-                $stmt = $pdo->prepare("UPDATE contacts SET contact_id = ?, first_name = ? WHERE extension = ? AND contact_id = ?");
-                $stmt->execute([$_POST['contact_id'], $_POST['first_name'], $ext, $_POST['update']]);
+                $stmt = $pdo->prepare("UPDATE contacts SET 
+                    contact_id = ?, 
+                    first_name = ?,
+                    last_name = ?,
+                    second_name = ?,
+                    organization = ?,
+                    job_title = ?,
+                    location = ?,
+                    notes = ?
+                    WHERE extension = ? AND contact_id = ?");
+                
+                $stmt->execute([
+                    $_POST['contact_id'],
+                    $_POST['first_name'],
+                    $_POST['last_name'] ?? null,
+                    $_POST['second_name'] ?? null,
+                    $_POST['organization'] ?? null,
+                    $_POST['job_title'] ?? null,
+                    $_POST['location'] ?? null,
+                    $_POST['notes'] ?? null,
+                    $ext,
+                    $_POST['original_contact_id'] // Используем original_contact_id для идентификации записи
+                ]);
+                
+                unset($_SESSION['edit_id']); // Сбрасываем режим редактирования
+                $_SESSION['message'] = "Контакт обновлен";
             } else {
                 $_SESSION['error'] = "Контакт с таким номером уже существует";
             }
-            unset($_SESSION['edit_id']);
         }
-    } elseif (isset($_POST['contact_id'], $_POST['first_name'])) {
-        // Валидация номера
+        header("Location: editor.php");
+        exit;
+    } elseif (isset($_POST['add_contact'], $_POST['contact_id'], $_POST['first_name'])) {
+        // Изменена логика для добавления контакта
         if (!preg_match('/^\+?\d+$/', $_POST['contact_id'])) {
             $_SESSION['error'] = "Номер должен содержать только цифры и может начинаться с +";
         } else {
@@ -52,18 +123,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $exists = $stmt->fetchColumn();
             
             if ($exists == 0) {
-                $stmt = $pdo->prepare("INSERT INTO contacts (extension, contact_id, first_name) VALUES (?, ?, ?)");
-                $stmt->execute([$ext, $_POST['contact_id'], $_POST['first_name']]);
+                $stmt = $pdo->prepare("INSERT INTO contacts (
+                    extension, contact_id, first_name, last_name, second_name, 
+                    organization, job_title, location, notes,
+                    pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone,
+                    ringing_led_color, ringing_led_state, ringing_ringtone,
+                    busy_led_color, busy_led_state, busy_ringtone,
+                    hold_led_color, hold_led_state
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
+                
+                $stmt->execute([
+                    $ext,
+                    $_POST['contact_id'],
+                    $_POST['first_name'],
+                    $_POST['last_name'] ?? null,
+                    $_POST['second_name'] ?? null,
+                    $_POST['organization'] ?? null,
+                    $_POST['job_title'] ?? null,
+                    $_POST['location'] ?? null,
+                    $_POST['notes'] ?? null
+                ]);
+                
+                $_SESSION['message'] = "Контакт добавлен";
             } else {
                 $_SESSION['error'] = "Контакт с таким номером уже существует";
             }
         }
+        header("Location: editor.php");
+        exit;
     }
 }
 
-$contacts = $pdo->prepare("SELECT id, contact_id, first_name FROM contacts WHERE extension = ? ORDER BY id ASC");
+// Отменяем режим редактирования, если был переход без сохранения (например, по кнопке "Отмена")
+if (isset($_GET['cancel_edit'])) {
+    unset($_SESSION['edit_id']);
+    header("Location: editor.php");
+    exit;
+}
+
+$contacts = $pdo->prepare("SELECT * FROM contacts WHERE extension = ? ORDER BY id ASC");
 $contacts->execute([$ext]);
 $contacts = $contacts->fetchAll(PDO::FETCH_ASSOC);
+
+$ringtones = ['Alarm', 'Chimes', 'Digium', 'GuitarStrum', 'Jingle', 'Office2', 'Office', 'RotaryPhone', 'SteelDrum', 'Techno', 'Theme', 'Tweedle', 'Twinkle', 'Vibe'];
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -71,21 +173,105 @@ $contacts = $contacts->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Редактирование BLF</title>
     <link rel="stylesheet" href="editor.css">
+    <style>
+    .name-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .smartblf-settings {
+        margin-top: 10px;
+        padding: 15px;
+        background: f9f9f9;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+    }
+    .setting-group {
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .setting-group h4 {
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+    .setting-group label {
+        display: block;
+        margin: 8px 0;
+    }
+    .setting-group select, 
+    .setting-group input[type="text"] {
+        width: 100%;
+        padding: 5px;
+        margin-top: 3px;
+    }
+    .error-message {
+        color: #d9534f;
+        background-color: #f2dede;
+        border: 1px solid #ebccd1;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .success-message {
+        color: #3c763d;
+        background-color: #dff0d8;
+        border: 1px solid #d6e9c6;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .hidden {
+        display: none;
+    }
+    .contact-actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    textarea {
+        width: 100%;
+        min-height: 60px;
+        padding: 5px;
+        margin-top: 5px;
+    }
+    .editing-row {
+        background-color: #f0f8ff;
+    }
+    </style>
     <script>
     function validateNumber(input) {
-        // Разрешаем: цифры, + в начале, Backspace, Delete, Tab
-        if (!/^\+?\d*$/.test(input.value)) {
-            input.value = input.value.replace(/[^\d\+]/g, '');
-            // Удаляем + если он не в начале
-            if (input.value.indexOf('+') > 0) {
-                input.value = input.value.replace('+', '');
-            }
-            // Удаляем лишние +
-            if ((input.value.match(/\+/g) || []).length > 1) {
-                input.value = input.value.replace(/\+/g, '');
-                input.value = '+' + input.value;
-            }
+        // Удаляем все, кроме цифр и первого плюса
+        let value = input.value;
+        let plusIndex = value.indexOf('+');
+
+        if (plusIndex !== -1) {
+            // Если плюс есть, оставляем его только в начале
+            value = '+' + value.replace(/\+/g, '').replace(/\D/g, '');
+        } else {
+            // Если плюса нет, удаляем все, кроме цифр
+            value = value.replace(/\D/g, '');
         }
+        input.value = value;
+    }
+
+    function toggleSettings(rowId) {
+        const settings = document.getElementById('settings-' + rowId);
+        settings.classList.toggle('hidden');
+    }
+
+    function cancelEdit() {
+        // Перенаправляем на ту же страницу с параметром для отмены редактирования
+        window.location.href = 'editor.php?cancel_edit=1';
     }
     </script>
 </head>
@@ -98,6 +284,11 @@ $contacts = $contacts->fetchAll(PDO::FETCH_ASSOC);
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
     
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="success-message"><?= htmlspecialchars($_SESSION['message']) ?></div>
+        <?php unset($_SESSION['message']); ?>
+    <?php endif; ?>
+    
     <div class="button-container">
         <form method="post">
             <button type="submit" name="logout" class="logout-btn">Выход</button>
@@ -105,48 +296,206 @@ $contacts = $contacts->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <table>
-        <tr><th>№</th><th>Номер</th><th>Имя</th><th>Действия</th></tr>
-        <?php foreach ($contacts as $index => $row): ?>
-            <?php if (isset($_SESSION['edit_id']) && $_SESSION['edit_id'] == $row['contact_id']): ?>
-                <tr>
-                    <form method="post">
+        <thead>
+            <tr><th>№</th><th>Номер</th><th>Имя</th><th>Доп. информация</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($contacts as $index => $row): ?>
+                <?php if (isset($_SESSION['edit_id']) && $_SESSION['edit_id'] == $row['contact_id']): ?>
+                    <tr class="editing-row">
                         <td><?= $index + 1 ?></td>
-                        <td><input type="text" name="contact_id" value="<?= htmlspecialchars($row['contact_id']) ?>" 
-                                  required oninput="validateNumber(this)"></td>
-                        <td><input type="text" name="first_name" value="<?= htmlspecialchars($row['first_name']) ?>" required></td>
-                        <td class="actions">
-                            <input type="hidden" name="update" value="<?= $row['contact_id'] ?>">
-                            <button type="submit" class="save-btn">Сохранить</button>
-                            <button type="button" class="cancel-btn" onclick="window.location.href='editor.php'">Отмена</button>
+                        <form method="post">
+                            <input type="hidden" name="original_contact_id" value="<?= htmlspecialchars($row['contact_id']) ?>">
+                            <input type="hidden" name="update_contact" value="1">
+                            <td><input type="text" name="contact_id" value="<?= htmlspecialchars($row['contact_id']) ?>" 
+                                     required oninput="validateNumber(this)"></td>
+                            <td>
+                                <div class="name-fields">
+                                    <input type="text" name="first_name" value="<?= htmlspecialchars($row['first_name']) ?>" required placeholder="First Name">
+                                    <input type="text" name="last_name" value="<?= htmlspecialchars($row['last_name']) ?>" placeholder="Last Name">
+                                    <input type="text" name="second_name" value="<?= htmlspecialchars($row['second_name']) ?>" placeholder="Second Name">
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text" name="organization" value="<?= htmlspecialchars($row['organization']) ?>" placeholder="Organization">
+                                <input type="text" name="job_title" value="<?= htmlspecialchars($row['job_title']) ?>" placeholder="Job Title">
+                                <input type="text" name="location" value="<?= htmlspecialchars($row['location']) ?>" placeholder="Location">
+                                <textarea name="notes" placeholder="Notes"><?= htmlspecialchars($row['notes']) ?></textarea>
+                            </td>
+                            <td class="contact-actions">
+                                <button type="submit" class="save-btn">Сохранить</button>
+                                <button type="button" class="cancel-btn" onclick="cancelEdit()">Отмена</button>
+                                <button type="button" onclick="toggleSettings('<?= $row['id'] ?>')" class="settings-btn">SmartBLF</button>
+                            </td>
+                        </form>
+                    </tr>
+                <?php else: ?>
+                    <tr>
+                        <td><?= $index + 1 ?></td>
+                        <td><?= htmlspecialchars($row['contact_id']) ?></td>
+                        <td>
+                            <?= htmlspecialchars($row['first_name']) ?>
+                            <?= !empty($row['last_name']) ? '<br>' . htmlspecialchars($row['last_name']) : '' ?>
+                            <?= !empty($row['second_name']) ? '<br>' . htmlspecialchars($row['second_name']) : '' ?>
                         </td>
-                    </form>
-                </tr>
-            <?php else: ?>
-                <tr>
-                    <td><?= $index + 1 ?></td>
-                    <td><?= htmlspecialchars($row['contact_id']) ?></td>
-                    <td><?= htmlspecialchars($row['first_name']) ?></td>
-                    <td class="actions">
-                        <form method="post" style="display:inline;">
-                            <button name="edit" value="<?= $row['contact_id'] ?>" class="edit-btn">Изменить</button>
-                        </form>
-                        <form method="post" style="display:inline;">
-                            <button name="delete" value="<?= $row['contact_id'] ?>" class="delete-btn">Удалить</button>
-                        </form>
+                        <td>
+                            <?= !empty($row['organization']) ? htmlspecialchars($row['organization']) : '' ?>
+                            <?= !empty($row['job_title']) ? ' ('.htmlspecialchars($row['job_title']).')' : '' ?>
+                            <?= !empty($row['location']) ? ' ['.htmlspecialchars($row['location']).']' : '' ?>
+                            <?= !empty($row['notes']) ? '<br><small>'.htmlspecialchars($row['notes']).'</small>' : '' ?>
+                        </td>
+                        <td class="contact-actions">
+                            <form method="post" style="display:inline;">
+                                <button name="edit" value="<?= $row['contact_id'] ?>" class="edit-btn">Изменить</button>
+                            </form>
+                            <form method="post" style="display:inline;">
+                                <button name="delete" value="<?= $row['contact_id'] ?>" class="delete-btn" onclick="return confirm('Вы уверены, что хотите удалить этот контакт?')">Удалить</button>
+                            </form>
+                            <button type="button" onclick="toggleSettings('<?= $row['id'] ?>')" class="settings-btn">SmartBLF</button>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                
+                <tr id="settings-<?= $row['id'] ?>" class="hidden">
+                    <td colspan="5">
+                        <div class="smartblf-settings">
+                            <h3>SmartBLF Settings for <?= htmlspecialchars($row['contact_id']) ?></h3>
+                            <form method="post">
+                                <input type="hidden" name="update_settings" value="1">
+                                <input type="hidden" name="contact_id" value="<?= $row['contact_id'] ?>">
+                                <div class="settings-grid">
+                                    <div class="setting-group">
+                                        <h4>Applications</h4>
+                                        <label><input type="checkbox" name="pickupcall" value="1" <?= $row['pickupcall'] ? 'checked' : '' ?>> Pickup Call (**)</label>
+                                        <label><input type="checkbox" name="myintercom" value="1" <?= $row['myintercom'] ? 'checked' : '' ?>> My Intercom (*80)</label>
+                                    </div>
+                                    
+                                    <div class="setting-group">
+                                        <h4>Idle State</h4>
+                                        <label>LED Color:
+                                            <select name="idle_led_color">
+                                                <option value="green" <?= $row['idle_led_color'] == 'green' ? 'selected' : '' ?>>Green</option>
+                                                <option value="amber" <?= $row['idle_led_color'] == 'amber' ? 'selected' : '' ?>>Amber</option>
+                                                <option value="red" <?= $row['idle_led_color'] == 'red' ? 'selected' : '' ?>>Red</option>
+                                            </select>
+                                        </label>
+                                        <label>LED State:
+                                            <select name="idle_led_state">
+                                                <option value="on" <?= $row['idle_led_state'] == 'on' ? 'selected' : '' ?>>On</option>
+                                                <option value="off" <?= $row['idle_led_state'] == 'off' ? 'selected' : '' ?>>Off</option>
+                                            </select>
+                                        </label>
+                                        <label>Ringtone:
+                                            <select name="idle_ringtone">
+                                                <?php foreach ($ringtones as $rt): ?>
+                                                    <option value="<?= $rt ?>" <?= $row['idle_ringtone'] == $rt ? 'selected' : '' ?>><?= $rt ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="setting-group">
+                                        <h4>Ringing State</h4>
+                                        <label>LED Color:
+                                            <select name="ringing_led_color">
+                                                <option value="green" <?= $row['ringing_led_color'] == 'green' ? 'selected' : '' ?>>Green</option>
+                                                <option value="amber" <?= $row['ringing_led_color'] == 'amber' ? 'selected' : '' ?>>Amber</option>
+                                                <option value="red" <?= $row['ringing_led_color'] == 'red' ? 'selected' : '' ?>>Red</option>
+                                            </select>
+                                        </label>
+                                        <label>LED State:
+                                            <select name="ringing_led_state">
+                                                <option value="fast" <?= $row['ringing_led_state'] == 'fast' ? 'selected' : '' ?>>Fast</option>
+                                                <option value="slow" <?= $row['ringing_led_state'] == 'slow' ? 'selected' : '' ?>>Slow</option>
+                                                <option value="on" <?= $row['ringing_led_state'] == 'on' ? 'selected' : '' ?>>On</option>
+                                                <option value="off" <?= $row['ringing_led_state'] == 'off' ? 'selected' : '' ?>>Off</option>
+                                            </select>
+                                        </label>
+                                        <label>Ringtone:
+                                            <select name="ringing_ringtone">
+                                                <?php foreach ($ringtones as $rt): ?>
+                                                    <option value="<?= $rt ?>" <?= $row['ringing_ringtone'] == $rt ? 'selected' : '' ?>><?= $rt ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="setting-group">
+                                        <h4>Busy State</h4>
+                                        <label>LED Color:
+                                            <select name="busy_led_color">
+                                                <option value="green" <?= $row['busy_led_color'] == 'green' ? 'selected' : '' ?>>Green</option>
+                                                <option value="amber" <?= $row['busy_led_color'] == 'amber' ? 'selected' : '' ?>>Amber</option>
+                                                <option value="red" <?= $row['busy_led_color'] == 'red' ? 'selected' : '' ?>>Red</option>
+                                            </select>
+                                        </label>
+                                        <label>LED State:
+                                            <select name="busy_led_state">
+                                                <option value="on" <?= $row['busy_led_state'] == 'on' ? 'selected' : '' ?>>On</option>
+                                                <option value="off" <?= $row['busy_led_state'] == 'off' ? 'selected' : '' ?>>Off</option>
+                                            </select>
+                                        </label>
+                                        <label>Ringtone:
+                                            <select name="busy_ringtone">
+                                                <?php foreach ($ringtones as $rt): ?>
+                                                    <option value="<?= $rt ?>" <?= $row['busy_ringtone'] == $rt ? 'selected' : '' ?>><?= $rt ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="setting-group">
+                                        <h4>Hold State</h4>
+                                        <label>LED Color:
+                                            <select name="hold_led_color">
+                                                <option value="green" <?= $row['hold_led_color'] == 'green' ? 'selected' : '' ?>>Green</option>
+                                                <option value="amber" <?= $row['hold_led_color'] == 'amber' ? 'selected' : '' ?>>Amber</option>
+                                                <option value="red" <?= $row['hold_led_color'] == 'red' ? 'selected' : '' ?>>Red</option>
+                                            </select>
+                                        </label>
+                                        <label>LED State:
+                                            <select name="hold_led_state">
+                                                <option value="slow" <?= $row['hold_led_state'] == 'slow' ? 'selected' : '' ?>>Slow</option>
+                                                <option value="fast" <?= $row['hold_led_state'] == 'fast' ? 'selected' : '' ?>>Fast</option>
+                                                <option value="on" <?= $row['hold_led_state'] == 'on' ? 'selected' : '' ?>>On</option>
+                                                <option value="off" <?= $row['hold_led_state'] == 'off' ? 'selected' : '' ?>>Off</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-top: 15px;">
+                                    <button type="submit" class="save-btn">Сохранить настройки</button>
+                                    <button type="button" onclick="toggleSettings('<?= $row['id'] ?>')" class="cancel-btn">Закрыть</button>
+                                </div>
+                            </form>
+                        </div>
                     </td>
                 </tr>
-            <?php endif; ?>
-        <?php endforeach; ?>
-        <tr>
-            <form method="post">
-                <td>#</td>
-                <td><input type="text" name="contact_id" required oninput="validateNumber(this)"></td>
-                <td><input type="text" name="first_name" required></td>
-                <td><button type="submit" class="add-btn">Добавить</button></td>
-            </form>
-        </tr>
+            <?php endforeach; ?>
+            
+            <tr>
+                <form method="post">
+                    <td>#</td>
+                    <td><input type="text" name="contact_id" required oninput="validateNumber(this)"></td>
+                    <td>
+                        <div class="name-fields">
+                            <input type="text" name="first_name" required placeholder="First Name">
+                            <input type="text" name="last_name" placeholder="Last Name">
+                            <input type="text" name="second_name" placeholder="Second Name">
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" name="organization" placeholder="Organization">
+                        <input type="text" name="job_title" placeholder="Job Title">
+                        <input type="text" name="location" placeholder="Location">
+                        <textarea name="notes" placeholder="Notes"></textarea>
+                    </td>
+                    <td><button type="submit" name="add_contact" class="add-btn">Добавить</button></td>
+                </form>
+            </tr>
+        </tbody>
     </table>
-    
+
     <form method="post" action="generate.php">
         <button type="submit" class="update-btn">Обновить BLF</button>
     </form>
