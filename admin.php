@@ -27,16 +27,15 @@ $formData = []; // Для сохранения данных формы посл�
 // Получение текущих настроек по умолчанию SmartBLF
 $defaultSettings = [];
 try {
-// здесь были зменения!
     $stmt = $pdo->query("SELECT COUNT(*) FROM blf_default_settings");
     $count = $stmt->fetchColumn();
 
-	if ($count == 0) {
-    // Если таблица пуста, создаем запись с id=1
-    $pdo->exec("INSERT INTO blf_default_settings (id, pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone, ringing_led_color, ringing_led_state, ringing_ringtone, busy_led_color, busy_led_state, busy_ringtone, hold_led_color, hold_led_state) VALUES (1, 1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
-}
+    if ($count == 0) {
+        // Если таблица пуста, создаем запись с id=1
+        $pdo->exec("INSERT INTO blf_default_settings (id, pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone, ringing_led_color, ringing_led_state, ringing_ringtone, busy_led_color, busy_led_state, busy_ringtone, hold_led_color, hold_led_state) VALUES (1, 1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
+    }
 
-// Всегда получаем запись с id=1
+    // Всегда получаем запись с id=1
     $stmt = $pdo->query("SELECT * FROM blf_default_settings WHERE id = 1");
     $defaultSettings = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -65,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'update':
                     if (isset($_POST['ext'], $_POST['password']) && !empty($_POST['password'])) {
                         $ext = $_POST['ext'];
-                        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+                        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT); // PHP всегда получает 'password' благодаря JS
                         $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE extension = ?");
                         $stmt->execute([$pass, $ext]);
                         $message = "Пароль для пользователя $ext изменён.";
@@ -82,17 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $message = "Пользователь $ext удалён.";
                     } else if ($_POST['ext'] === 'admin') {
                         $error = "Невозможно удалить пользователя 'admin'.";
-                    }
-                    break;
-
-                case 'update_admin':
-                    if (isset($_POST['new_password']) && !empty($_POST['new_password'])) {
-                        $pass = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
-                        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE extension = 'admin'");
-                        $stmt->execute([$pass]);
-                        $message = "Пароль администратора изменён.";
-                    } else {
-                        $error = "Пароль не может быть пустым";
                     }
                     break;
 
@@ -204,8 +192,22 @@ $users = $pdo->query("SELECT extension FROM users ORDER BY extension")
                 </select>
 
                 <div class="password-field" id="passwordField" style="display: none;">
-                    <label for="update_password">Новый пароль:</label>
-                    <input type="password" name="password" id="update_password" autocomplete="new-password">
+                    <div id="singlePasswordField">
+                        <label for="update_password">Новый пароль:</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" name="password" id="update_password" autocomplete="new-password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('update_password')">👁️</span>
+                        </div>
+                    </div>
+                    <div id="adminPasswordFields" style="display: none;">
+                        <label for="admin_password">Новый пароль администратора:</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" name="admin_password" id="admin_password" autocomplete="new-password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('admin_password')">👁️</span>
+                        </div>
+                        <label for="confirm_admin_password">Подтвердите пароль:</label>
+                        <input type="password" name="confirm_admin_password_unused" id="confirm_admin_password" autocomplete="new-password">
+                        </div>
                 </div>
 
                 <div class="form-buttons">
@@ -426,27 +428,95 @@ if (window.history.replaceState && <?= !empty($message) ? 'true' : 'false' ?>) {
 document.getElementById('userSelect').addEventListener('change', function() {
     const selectedUser = this.value;
     const deleteBtn = document.getElementById('deleteBtn');
-    const passwordField = document.getElementById('passwordField');
+    const passwordFieldContainer = document.getElementById('passwordField');
+    const singlePasswordField = document.getElementById('singlePasswordField');
+    const adminPasswordFields = document.getElementById('adminPasswordFields');
+    const updatePasswordInput = document.getElementById('update_password');
+    const adminPasswordInput = document.getElementById('admin_password');
+    const confirmAdminPasswordInput = document.getElementById('confirm_admin_password');
 
+    // Отключаем кнопку удаления для admin или пустого выбора
     deleteBtn.disabled = (selectedUser === 'admin' || selectedUser === '');
-    passwordField.style.display = selectedUser ? 'block' : 'none';
 
-    // Clear password field when changing user
-    if (passwordField.style.display === 'block') {
-        passwordField.querySelector('input').value = '';
+    // Показываем/скрываем контейнер полей пароля
+    passwordFieldContainer.style.display = selectedUser ? 'block' : 'none';
+
+    // Сбрасываем значения полей при смене пользователя
+    updatePasswordInput.value = '';
+    adminPasswordInput.value = '';
+    confirmAdminPasswordInput.value = '';
+
+    // Определяем, какие поля показывать
+    if (selectedUser === 'admin') {
+        singlePasswordField.style.display = 'none';
+        adminPasswordFields.style.display = 'block';
+        // Устанавливаем name="password" для поля админа, которое будет отправлено
+        adminPasswordInput.name = 'password';
+        // Убираем name у других полей, чтобы они не отправлялись
+        updatePasswordInput.name = 'unused_update_password';
+        confirmAdminPasswordInput.name = 'unused_confirm_admin_password'; // Это поле только для JS валидации
+    } else {
+        singlePasswordField.style.display = 'block';
+        adminPasswordFields.style.display = 'none';
+        // Устанавливаем name="password" для обычного поля
+        updatePasswordInput.name = 'password';
+        // Убираем name у полей админа
+        adminPasswordInput.name = 'unused_admin_password';
+        confirmAdminPasswordInput.name = 'unused_confirm_admin_password'; // Это поле только для JS валидации
     }
 });
 
 document.getElementById('userManagementForm').addEventListener('submit', function(e) {
     const action = e.submitter.value;
-    const passwordInput = document.querySelector('#userManagementForm input[name="password"]');
+    const selectedUser = document.getElementById('userSelect').value;
 
-    // Only require password if updating, and the password field is visible
-    if (action === 'update' && passwordInput.style.display !== 'none' && !passwordInput.value) {
-        alert('Для изменения пароля введите новый пароль');
+    if (action === 'update') {
+        if (selectedUser === 'admin') {
+            const adminPassword = document.getElementById('admin_password').value;
+            const confirmAdminPassword = document.getElementById('confirm_admin_password').value; // Это поле для JS валидации
+
+            if (!adminPassword || !confirmAdminPassword) {
+                alert('Пожалуйста, заполните оба поля для пароля администратора.');
+                e.preventDefault();
+                return;
+            }
+
+            if (adminPassword !== confirmAdminPassword) {
+                alert('Пароли не совпадают. Пожалуйста, проверьте ввод.');
+                e.preventDefault();
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите изменить пароль администратора?')) {
+                e.preventDefault();
+                return;
+            }
+
+        } else { // Для обычных пользователей
+            const passwordInput = document.getElementById('update_password');
+            if (!passwordInput.value) {
+                alert('Для изменения пароля введите новый пароль');
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+    // Клиентская валидация для удаления админа (PHP тоже это обрабатывает)
+    if (action === 'delete' && selectedUser === 'admin') {
+        alert('Невозможно удалить пользователя "admin".');
         e.preventDefault();
     }
 });
+
+// Функция для переключения видимости пароля
+function togglePasswordVisibility(id) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
 
 // Добавляем функциональность для кнопки скрытия/показа настроек BLF
 document.getElementById('toggleBlfSettings').addEventListener('click', function() {
