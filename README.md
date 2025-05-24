@@ -66,7 +66,7 @@ return [
 ```
 mysql -u root -p blf_system < blf_structure.sql
 ```
-Файл **blf_structure.sql** содержит только структуру таблиц.
+*Файл blf_structure.sql содержит только структуру таблиц.*
 
 5. Зайдите в файл **setup_admin.php** и поменяйте пароль **admin** по умолчанию. (По умолчанию 1234)
 (впрочем его тут можно не менять, при первом входе в админку вы сможете его потом сразу поменять)
@@ -76,8 +76,7 @@ mysql -u root -p blf_system < blf_structure.sql
 php setup_admin.php
 ```
 
-**Примечание**: Пользователь **admin** создаётся 1 раз, если второй раз запустить этот файл, то пароль не поменяетя, так как пользователь уже создан
-но он подскажет как поступить дальше. Удалить пользователя **admin** - можно только из БД напрямую.
+*Примечание: Пользователь **admin** создаётся 1 раз, если второй раз запустить этот файл, то пароль не поменяетя, так как пользователь уже создан, но он подскажет как поступить дальше. Удалить пользователя **admin** - можно только из БД напрямую.*
 
 (Я решил сделать именно так, без внешней страницы регистрации, в общем, я так вижу)
 
@@ -179,7 +178,7 @@ return [
 
 3. Create an empty database in MySQL/MariaDB: **blf_system**
 
-Import the database structure:
+4. Import the database structure:
 
 ```
 mysql -u root -p blf_system < blf_structure.sql
@@ -187,10 +186,10 @@ mysql -u root -p blf_system < blf_structure.sql
 
 *Note: The blf_structure.sql file contains only the table structure.*
 
-4. Open **setup_admin.php** and change the default admin password (default is 1234).
+5. Open **setup_admin.php** and change the default admin password (default is 1234).
 (You can skip this step since you'll be able to change it after first login to the admin panel)
 
-Run:
+6. Run:
 ```
 php setup_admin.php
 ```
@@ -199,7 +198,7 @@ php setup_admin.php
 
 (I decided to implement it this way without a separate registration page - this is my preferred approach)
 
-Set correct file permissions:
+7. Set correct file permissions:
 
 ```
 chown -R asterisk:asterisk /var/www/html/digium_phones
