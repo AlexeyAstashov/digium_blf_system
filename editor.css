@@ -7,9 +7,9 @@ body {
 }
 
 .container {
-    width: 90%;
-    max-width: 800px;
-    margin: 30px auto;
+    width: 95%;
+    max-width: 1200px;
+    margin: 20px auto;
     background: #fff;
     padding: 20px;
     box-shadow: 0 0 8px rgba(0,0,0,0.1);
@@ -19,8 +19,10 @@ body {
 h2 {
     text-align: center;
     margin-bottom: 20px;
+    color: #2c3e50;
 }
 
+/* Стили для таблицы */
 table {
     border-collapse: collapse;
     width: 100%;
@@ -31,112 +33,148 @@ th, td {
     border: 1px solid #ddd;
     padding: 8px 10px;
     text-align: center;
+    vertical-align: top;
 }
 
 th {
     background-color: #4caf50;
     color: white;
+    position: sticky;
+    top: 0;
 }
 
-input[type="text"] {
-    width: 95%;
+/* Ширины колонок */
+th:nth-child(1), td:nth-child(1) { width: 5%; }
+
+th:nth-child(2), td:nth-child(2) {
+    white-space: nowrap;
+    padding: 4px 8px;
+    width: auto;
+    max-width: 100px;
+}
+
+th:nth-child(3), td:nth-child(3) { width: 25%; }
+th:nth-child(4), td:nth-child(4) { width: 15%; }
+th:nth-child(5), td:nth-child(5) { width: 60%; min-width: 220px; }
+
+/* Стили для форм и полей ввода */
+input[type="text"],
+textarea,
+select {
+    width: 100%;
     padding: 6px;
     font-size: 14px;
     box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 5px;
 }
 
+textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+/* Контейнер для кнопки выхода */
 .button-container {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-.actions {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-
+/* Общие стили кнопок */
 button {
     padding: 6px 12px;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     border-radius: 4px;
     border: none;
     color: white;
+    transition: background-color 0.3s;
+    margin: 2px;
+    white-space: nowrap;
 }
 
-.edit-btn {
-    background-color: #2196F3;
-}
+/* Конкретные стили кнопок */
+.edit-btn { background-color: #2196F3; }
+.edit-btn:hover { background-color: #0b7dda; }
 
-.edit-btn:hover {
-    background-color: #0b7dda;
-}
+.delete-btn { background-color: #f44336; }
+.delete-btn:hover { background-color: #d32f2f; }
 
-.delete-btn {
-    background-color: #f44336;
-}
+.save-btn { background-color: #4CAF50; }
+.save-btn:hover { background-color: #45a049; }
 
-.delete-btn:hover {
-    background-color: #d32f2f;
-}
+.add-btn { background-color: #ff9800; }
+.add-btn:hover { background-color: #e68a00; }
 
-.save-btn {
-    background-color: #4CAF50;
-}
-
-.save-btn:hover {
-    background-color: #45a049;
-}
-
-.add-btn {
-    background-color: #ff9800;
-}
-
-.add-btn:hover {
-    background-color: #e68a00;
-}
-
-.update-btn {
+.update-btn { 
     background-color: #9c27b0;
     margin-top: 20px;
+    padding: 8px 16px;
 }
+.update-btn:hover { background-color: #7b1fa2; }
 
-.update-btn:hover {
-    background-color: #7b1fa2;
-}
+.cancel-btn { background-color: #6c757d; }
+.cancel-btn:hover { background-color: #5a6268; }
 
-.cancel-btn {
-    background-color: #6c757d;
-}
-
-.cancel-btn:hover {
-    background-color: #5a6268;
-}
 .logout-btn {
-    background-color: #f44336 !important;
-    color: white !important;
+    background-color: #f44336;
+    padding: 8px 16px;
+}
+.logout-btn:hover { background-color: #d32f2f; }
+
+.settings-btn { background-color: #4caf50; }
+.settings-btn:hover { background-color: #45a049; }
+
+/* Стили для блока действий */
+.contact-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 5px;
+    overflow-x: auto;
 }
 
-.logout-btn:hover {
-    background-color: #d32f2f !important;
+.contact-actions form {
+    display: inline-block;
+    margin: 0;
 }
+
+/* Стили для редактируемой строки */
+.editing-row {
+    background-color: #f0f8ff;
+}
+
+.name-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Стили для SmartBLF настроек */
 .smartblf-settings {
-    margin-top: 30px;
-    padding: 20px;
+    margin-top: 10px;
+    padding: 15px;
     background: #f9f9f9;
     border-radius: 5px;
     border: 1px solid #ddd;
 }
 
+.smartblf-settings h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #2c3e50;
+}
+
 .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 .setting-group {
-    padding: 15px;
+    padding: 10px;
     background: white;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
@@ -146,19 +184,83 @@ button {
     margin-top: 0;
     border-bottom: 1px solid #eee;
     padding-bottom: 5px;
+    color: #2c3e50;
 }
 
 .setting-group label {
     display: block;
-    margin: 10px 0;
+    margin: 8px 0;
+    font-size: 14px;
 }
 
-.setting-group select, 
-.setting-group input[type="text"] {
+.setting-group select {
     width: 100%;
     padding: 5px;
-    margin-top: 3px;
 }
-.settings-btn {
-    background: green;
+
+/* Кнопки в SmartBLF */
+.smartblf-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Сообщения */
+.error-message {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.success-message {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 6px 8px;
+    }
+
+    th:nth-child(1), td:nth-child(1),
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) {
+        width: auto;
+        display: block;
+    }
+
+    .contact-actions {
+        flex-direction: column;
+        flex-wrap: wrap;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
 }

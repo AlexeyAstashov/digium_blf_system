@@ -194,7 +194,7 @@ foreach ($contacts as $row) {
     $indicator4 = $smartBlfXml->createElement('indicator');
     $indicator4->setAttribute('target_status', 'on_hold');
     $indicator4->setAttribute('ring', '0');
-    $indicator4->setAttribute('ringtone_id', $row['busy_ringtone']);
+    $indicator4->setAttribute('ringtone_id', $row['hold_ringtone']); // Исправлено на hold_ringtone
     $indicator4->setAttribute('led_color', $row['hold_led_color']);
     $indicator4->setAttribute('led_state', $row['hold_led_state']);
     $indicators->appendChild($indicator4);

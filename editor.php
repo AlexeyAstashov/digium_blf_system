@@ -15,6 +15,48 @@ try {
     die("Ошибка подключения: " . $e->getMessage());
 }
 
+// Загрузка настроек по умолчанию
+$defaultSettings = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM blf_default_settings WHERE id = 1");
+    $defaultSettings = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$defaultSettings) {
+        $defaultSettings = [
+            'pickupcall' => 1,
+            'myintercom' => 1,
+            'idle_led_color' => 'green',
+            'idle_led_state' => 'on',
+            'idle_ringtone' => 'Digium',
+            'ringing_led_color' => 'red',
+            'ringing_led_state' => 'fast',
+            'ringing_ringtone' => 'Techno',
+            'busy_led_color' => 'red',
+            'busy_led_state' => 'on',
+            'busy_ringtone' => 'Techno',
+            'hold_led_color' => 'amber',
+            'hold_led_state' => 'slow',
+            'hold_ringtone' => 'Techno'
+        ];
+    }
+} catch (PDOException $e) {
+    $defaultSettings = [
+        'pickupcall' => 1,
+        'myintercom' => 1,
+        'idle_led_color' => 'green',
+        'idle_led_state' => 'on',
+        'idle_ringtone' => 'Digium',
+        'ringing_led_color' => 'red',
+        'ringing_led_state' => 'fast',
+        'ringing_ringtone' => 'Techno',
+        'busy_led_color' => 'red',
+        'busy_led_state' => 'on',
+        'busy_ringtone' => 'Techno',
+        'hold_led_color' => 'amber',
+        'hold_led_state' => 'slow',
+        'hold_ringtone' => 'Techno'
+    ];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['logout'])) {
         session_destroy();
@@ -31,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: editor.php");
         exit;
     } elseif (isset($_POST['update_settings'], $_POST['contact_id'])) {
-        // Обработка сохранения настроек SmartBLF
         $stmt = $pdo->prepare("UPDATE contacts SET 
             pickupcall = ?,
             myintercom = ?,
@@ -45,7 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             busy_led_state = ?,
             busy_ringtone = ?,
             hold_led_color = ?,
-            hold_led_state = ?
+            hold_led_state = ?,
+            hold_ringtone = ?
             WHERE extension = ? AND contact_id = ?");
         
         $stmt->execute([
@@ -62,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['busy_ringtone'] ?? 'Techno',
             $_POST['hold_led_color'] ?? 'amber',
             $_POST['hold_led_state'] ?? 'slow',
+            $_POST['hold_ringtone'] ?? 'Techno',
             $ext,
             $_POST['contact_id']
         ]);
@@ -70,12 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: editor.php");
         exit;
     } elseif (isset($_POST['update_contact'], $_POST['original_contact_id'], $_POST['contact_id'], $_POST['first_name'])) {
-        // Изменена логика для сохранения контакта
-        // Используем original_contact_id для WHERE условия, а contact_id для установки нового значения
         if (!preg_match('/^\+?\d+$/', $_POST['contact_id'])) {
             $_SESSION['error'] = "Номер должен содержать только цифры и может начинаться с +";
         } else {
-            // Проверяем, существует ли новый contact_id у других контактов (кроме текущего редактируемого)
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM contacts WHERE extension = ? AND contact_id = ? AND contact_id != ?");
             $stmt->execute([$ext, $_POST['contact_id'], $_POST['original_contact_id']]);
             $exists = $stmt->fetchColumn();
@@ -102,10 +142,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_POST['location'] ?? null,
                     $_POST['notes'] ?? null,
                     $ext,
-                    $_POST['original_contact_id'] // Используем original_contact_id для идентификации записи
+                    $_POST['original_contact_id']
                 ]);
                 
-                unset($_SESSION['edit_id']); // Сбрасываем режим редактирования
+                unset($_SESSION['edit_id']);
                 $_SESSION['message'] = "Контакт обновлен";
             } else {
                 $_SESSION['error'] = "Контакт с таким номером уже существует";
@@ -114,7 +154,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: editor.php");
         exit;
     } elseif (isset($_POST['add_contact'], $_POST['contact_id'], $_POST['first_name'])) {
-        // Изменена логика для добавления контакта
         if (!preg_match('/^\+?\d+$/', $_POST['contact_id'])) {
             $_SESSION['error'] = "Номер должен содержать только цифры и может начинаться с +";
         } else {
@@ -129,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone,
                     ringing_led_color, ringing_led_state, ringing_ringtone,
                     busy_led_color, busy_led_state, busy_ringtone,
-                    hold_led_color, hold_led_state
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
+                    hold_led_color, hold_led_state, hold_ringtone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
                 $stmt->execute([
                     $ext,
@@ -141,7 +180,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_POST['organization'] ?? null,
                     $_POST['job_title'] ?? null,
                     $_POST['location'] ?? null,
-                    $_POST['notes'] ?? null
+                    $_POST['notes'] ?? null,
+                    $defaultSettings['pickupcall'],
+                    $defaultSettings['myintercom'],
+                    $defaultSettings['idle_led_color'],
+                    $defaultSettings['idle_led_state'],
+                    $defaultSettings['idle_ringtone'],
+                    $defaultSettings['ringing_led_color'],
+                    $defaultSettings['ringing_led_state'],
+                    $defaultSettings['ringing_ringtone'],
+                    $defaultSettings['busy_led_color'],
+                    $defaultSettings['busy_led_state'],
+                    $defaultSettings['busy_ringtone'],
+                    $defaultSettings['hold_led_color'],
+                    $defaultSettings['hold_led_state'],
+                    $defaultSettings['hold_ringtone']
                 ]);
                 
                 $_SESSION['message'] = "Контакт добавлен";
@@ -154,7 +207,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Отменяем режим редактирования, если был переход без сохранения (например, по кнопке "Отмена")
 if (isset($_GET['cancel_edit'])) {
     unset($_SESSION['edit_id']);
     header("Location: editor.php");
@@ -174,91 +226,15 @@ $ringtones = ['Alarm', 'Chimes', 'Digium', 'GuitarStrum', 'Jingle', 'Office2', '
     <title>Редактирование BLF</title>
     <link rel="stylesheet" href="editor.css">
     <style>
-    .name-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
-    .smartblf-settings {
-        margin-top: 10px;
-        padding: 15px;
-        background: f9f9f9;
-        border-radius: 5px;
-        border: 1px solid #ddd;
-    }
-    .settings-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 15px;
-    }
-    .setting-group {
-        padding: 10px;
-        background: white;
-        border-radius: 5px;
-        box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    .setting-group h4 {
-        margin-top: 0;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
-    }
-    .setting-group label {
-        display: block;
-        margin: 8px 0;
-    }
-    .setting-group select, 
-    .setting-group input[type="text"] {
-        width: 100%;
-        padding: 5px;
-        margin-top: 3px;
-    }
-    .error-message {
-        color: #d9534f;
-        background-color: #f2dede;
-        border: 1px solid #ebccd1;
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 4px;
-        text-align: center;
-    }
-    .success-message {
-        color: #3c763d;
-        background-color: #dff0d8;
-        border: 1px solid #d6e9c6;
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 4px;
-        text-align: center;
-    }
-    .hidden {
-        display: none;
-    }
-    .contact-actions {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-    }
-    textarea {
-        width: 100%;
-        min-height: 60px;
-        padding: 5px;
-        margin-top: 5px;
-    }
-    .editing-row {
-        background-color: #f0f8ff;
-    }
     </style>
     <script>
     function validateNumber(input) {
-        // Удаляем все, кроме цифр и первого плюса
         let value = input.value;
         let plusIndex = value.indexOf('+');
 
         if (plusIndex !== -1) {
-            // Если плюс есть, оставляем его только в начале
             value = '+' + value.replace(/\+/g, '').replace(/\D/g, '');
         } else {
-            // Если плюса нет, удаляем все, кроме цифр
             value = value.replace(/\D/g, '');
         }
         input.value = value;
@@ -270,7 +246,6 @@ $ringtones = ['Alarm', 'Chimes', 'Digium', 'GuitarStrum', 'Jingle', 'Office2', '
     }
 
     function cancelEdit() {
-        // Перенаправляем на ту же страницу с параметром для отмены редактирования
         window.location.href = 'editor.php?cancel_edit=1';
     }
     </script>
@@ -344,16 +319,18 @@ $ringtones = ['Alarm', 'Chimes', 'Digium', 'GuitarStrum', 'Jingle', 'Office2', '
                             <?= !empty($row['location']) ? ' ['.htmlspecialchars($row['location']).']' : '' ?>
                             <?= !empty($row['notes']) ? '<br><small>'.htmlspecialchars($row['notes']).'</small>' : '' ?>
                         </td>
-                        <td class="contact-actions">
-                            <form method="post" style="display:inline;">
-                                <button name="edit" value="<?= $row['contact_id'] ?>" class="edit-btn">Изменить</button>
-                            </form>
-                            <form method="post" style="display:inline;">
-                                <button name="delete" value="<?= $row['contact_id'] ?>" class="delete-btn" onclick="return confirm('Вы уверены, что хотите удалить этот контакт?')">Удалить</button>
-                            </form>
-                            <button type="button" onclick="toggleSettings('<?= $row['id'] ?>')" class="settings-btn">SmartBLF</button>
-                        </td>
-                    </tr>
+
+			<td>
+			    <div class="contact-actions">
+			        <form method="post">
+			            <button name="edit" value="<?= $row['contact_id'] ?>" class="edit-btn">Изменить</button>
+			        </form>
+			        <form method="post">
+			            <button name="delete" value="<?= $row['contact_id'] ?>" class="delete-btn" onclick="return confirm('Вы уверены?')">Удалить</button>
+			        </form>
+			            <button type="button" onclick="toggleSettings('<?= $row['id'] ?>')" class="settings-btn">SmartBLF</button>
+			    </div>
+			</td>
                 <?php endif; ?>
                 
                 <tr id="settings-<?= $row['id'] ?>" class="hidden">
@@ -459,6 +436,13 @@ $ringtones = ['Alarm', 'Chimes', 'Digium', 'GuitarStrum', 'Jingle', 'Office2', '
                                                 <option value="fast" <?= $row['hold_led_state'] == 'fast' ? 'selected' : '' ?>>Fast</option>
                                                 <option value="on" <?= $row['hold_led_state'] == 'on' ? 'selected' : '' ?>>On</option>
                                                 <option value="off" <?= $row['hold_led_state'] == 'off' ? 'selected' : '' ?>>Off</option>
+                                            </select>
+                                        </label>
+                                        <label>Ringtone:
+                                            <select name="hold_ringtone">
+                                                <?php foreach ($ringtones as $rt): ?>
+                                                    <option value="<?= $rt ?>" <?= ($row['hold_ringtone'] ?? 'Techno') == $rt ? 'selected' : '' ?>><?= $rt ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </label>
                                     </div>
