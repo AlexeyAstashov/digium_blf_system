@@ -44,12 +44,12 @@ digium_blf_system/
 
 
 ⚙️ **Установка**
-Клонируйте репозиторий:
+1. Клонируйте репозиторий:
 ```
 git clone https://github.com/AlexeyAstashov/digium_blf_system.git
 ```
 
-Настройте подключение к базе данных в **config.php**:
+2. Настройте подключение к базе данных в **config.php**:
 ```
 return [
     'db_host' => 'localhost',
@@ -58,17 +58,36 @@ return [
     'db_pass' => 'password'
 ];
 ```
-Импортируйте структуру базы данных:
+
+3. Создайте пустую базу данных в MySQL/MadiaDB:  **blf_system**
+
+
+4. Импортируйте структуру базы данных:
 ```
 mysql -u root -p blf_system < blf_structure.sql
 ```
 Файл **blf_structure.sql** содержит только структуру таблиц.
 
-Дайте права на запись веб-серверу:
+5. Зайдите в файл **setup_admin.php** и поменяйте пароль **admin** по умолчанию. (По умолчанию 1234)
+(впрочем его тут можно не менять, при первом входе в админку вы сможете его потом сразу поменять)
+
+6. Запустите 
 ```
-chown -R asterisk:asterisk /var/www/html/digium_phones
+php setup_admin.php
+```
+
+**Примечание**: Пользователь **admin** создаётся 1 раз, если второй раз запустить этот файл, то пароль не поменяетя, так как пользователь уже создан
+но он подскажет как поступить дальше. Удалить пользователя **admin** - можно только из БД напрямую.
+
+(Я решил сделать именно так, без внешней страницы регистрации, в общем, я так вижу)
+
+7. Дайте права на запись веб-серверу:
+```
+chown -R asterisk:asterisk /var/www/html/digium_phones/
 chmod -R 755 /var/www/html/digium_phones
 ```
+
+
 
 ## 🔄 Принцип работы
 
@@ -144,12 +163,11 @@ digium_blf_system/
 ## ⚙️ Installation
 
 1. Clone the repository:
-
 ```
 git clone https://github.com/AlexeyAstashov/digium_blf_system.git
 ```
-Configure database connection in ***config.php***:
 
+2. Configure the database connection in config.php:
 ```
 return [
     'db_host' => 'localhost',
@@ -159,12 +177,27 @@ return [
 ];
 ```
 
-Import database structure:
+3. Create an empty database in MySQL/MariaDB: **blf_system**
+
+Import the database structure:
 
 ```
 mysql -u root -p blf_system < blf_structure.sql
 ```
-The blf_structure.sql file contains only the database schema.
+
+*Note: The blf_structure.sql file contains only the table structure.*
+
+4. Open **setup_admin.php** and change the default admin password (default is 1234).
+(You can skip this step since you'll be able to change it after first login to the admin panel)
+
+Run:
+```
+php setup_admin.php
+```
+
+*Note: The admin user is created only once. If you run this file again, it won't change the password because the user already exists, but it will show instructions for next steps. The admin user can only be deleted directly from the database.*
+
+(I decided to implement it this way without a separate registration page - this is my preferred approach)
 
 Set correct file permissions:
 
