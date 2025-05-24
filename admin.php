@@ -27,14 +27,19 @@ $formData = []; // Для сохранения данных формы посл�
 // Получение текущих настроек по умолчанию SmartBLF
 $defaultSettings = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM blf_default_settings WHERE id = 1"); // Предполагаем, что у нас одна запись с id = 1
+// здесь были зменения!
+    $stmt = $pdo->query("SELECT COUNT(*) FROM blf_default_settings");
+    $count = $stmt->fetchColumn();
+
+	if ($count == 0) {
+    // Если таблица пуста, создаем запись с id=1
+    $pdo->exec("INSERT INTO blf_default_settings (id, pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone, ringing_led_color, ringing_led_state, ringing_ringtone, busy_led_color, busy_led_state, busy_ringtone, hold_led_color, hold_led_state) VALUES (1, 1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
+}
+
+// Всегда получаем запись с id=1
+    $stmt = $pdo->query("SELECT * FROM blf_default_settings WHERE id = 1");
     $defaultSettings = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$defaultSettings) {
-        // Если нет записи, вставляем дефолтные значения
-        $pdo->exec("INSERT INTO blf_default_settings (pickupcall, myintercom, idle_led_color, idle_led_state, idle_ringtone, ringing_led_color, ringing_led_state, ringing_ringtone, busy_led_color, busy_led_state, busy_ringtone, hold_led_color, hold_led_state) VALUES (1, 1, 'green', 'on', 'Digium', 'red', 'fast', 'Techno', 'red', 'on', 'Techno', 'amber', 'slow')");
-        $stmt = $pdo->query("SELECT * FROM blf_default_settings WHERE id = 1");
-        $defaultSettings = $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+
 } catch (PDOException $e) {
     $error = "Ошибка при загрузке настроек по умолчанию: " . $e->getMessage();
 }
@@ -215,7 +220,7 @@ $users = $pdo->query("SELECT extension FROM users ORDER BY extension")
 
     <button type="button" class="show-blf-settings-btn" id="toggleBlfSettings">Показать/Скрыть настройки SmartBLF по умолчанию</button>
 
-    <div class="blf-settings-container" id="blfSettingsContainer">
+    <div class="blf-settings-container" id="blfSettingsContainer" style="display: none;" >
         <h3>Настройки SmartBLF по умолчанию для новых контактов</h3>
         <form method="post">
             <input type="hidden" name="action" value="update_blf_defaults">
